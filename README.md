@@ -17,9 +17,9 @@ Clone the repository to your local machine:
 ### 3. Install EALogger
 Navigate to the cloned directory and install the wheel:
 
-pip install --upgrade {directory}\eaLogger\eaLogger-0.1.6-py3-none-any.whl
+pip install --upgrade {directory}\EALogger\EALogger-0.1.6-py3-none-any.whl
 
-pip install --upgrade eaLogger\eaLogger-0.1.6-py3-none-any.whl
+pip install --upgrade EALogger\EALogger-0.1.6-py3-none-any.whl
 
 ### 4. Verify Installation
 Open a Python shell and test:
