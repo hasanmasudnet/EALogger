@@ -1,8 +1,11 @@
 # Build artifacts
 build/
-dist/
 *.egg-info/
 *.egg
+
+# Note: dist/ is tracked because we distribute wheels via git
+# Uncomment below to ignore dist/ if publishing to PyPI instead:
+# dist/
 
 # Python
 __pycache__/
