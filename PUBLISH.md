@@ -3,6 +3,7 @@
 ## Prerequisites
 
 1. **Create PyPI accounts:**
+
    - Production: https://pypi.org/account/register/
    - Test: https://test.pypi.org/account/register/
 
@@ -16,6 +17,7 @@
 ### 1. Verify Package Details
 
 Check `pyproject.toml`:
+
 - ✅ Package name: `EALogger` (available on PyPI)
 - ✅ Author info (name + real email)
 - ✅ Version number (not duplicate of existing releases)
@@ -25,6 +27,7 @@ Check `pyproject.toml`:
 ### 2. Create Test PyPI Account & API Token
 
 Go to https://test.pypi.org/manage/account/token/ and create:
+
 - **Scope:** Project scope, select "EALogger"
 - **Token name:** `ealogger-test-upload`
 - Copy the token: `pypi-AgEIc...` (starts with `pypi-`)
@@ -32,6 +35,7 @@ Go to https://test.pypi.org/manage/account/token/ and create:
 ### 3. Create Production PyPI API Token
 
 Go to https://pypi.org/manage/account/token/ and create:
+
 - **Scope:** Project scope, select "EALogger" (will be created)
 - **Token name:** `ealogger-prod-upload`
 - Copy the token
@@ -137,24 +141,29 @@ python -c "from EALogger import get_logger; print('Success!')"
 ## Troubleshooting
 
 ### Error: "Package already exists"
+
 - This version was already published
 - Increment version number in `__init__.py` and `pyproject.toml`
 
 ### Error: "Invalid username"
+
 - Use `__token__` as username (literal)
 - Use your API token as password
 
 ### Error: "Package name not available"
+
 - Name `EALogger` already taken
 - Change name in `pyproject.toml` and `setup.py`
 
 ### Error: "Repository does not exist"
+
 - First publish to production creates the repository
 - Or manually reserve name on PyPI first
 
 ## Security Notes
 
 ⚠️ **Never commit tokens to git!** Store them in:
+
 - Environment variables
 - Encrypted password manager
 - CI/CD secrets (for automated publishing)
@@ -187,8 +196,8 @@ Use [SemVer](https://semver.org/): `MAJOR.MINOR.PATCH`
 - **PATCH**: Bug fixes (e.g., 0.2.0 → 0.2.1)
 
 Example releases:
+
 - `0.2.0` - Current version
 - `0.2.1` - Bug fix
 - `0.3.0` - New features
 - `1.0.0` - Stable production release
-
