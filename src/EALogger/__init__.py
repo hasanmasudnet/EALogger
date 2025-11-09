@@ -14,7 +14,7 @@ from .decorators import log_entry_exit, log_entry_exit_async, log_performance, l
 from .formatters import JSONFormatter, ColoredConsoleFormatter
 from .search import LogSearcher
 
-__version__ = "0.2.0"
+__version__ = "0.2.2"
 
 __all__ = [
     "get_logger",
