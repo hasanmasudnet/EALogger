@@ -28,39 +28,47 @@ class JSONFormatter(logging.Formatter):
         self.use_orjson = USE_ORJSON
     
     def format(self, record: logging.LogRecord) -> str:
-        """Format log record as JSON with comprehensive fields"""      
-       # Base log record
+        """Format log record as JSON with comprehensive fields"""
         log_record: Dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            # "level": record.levelname,
-            # "module": record.module,
-            "action": getattr(record, "action", None),
-            "method": getattr(record, "method", None),
-            "username": getattr(record, "username", None),
+            "level": record.levelname,
+            "logger": record.name,
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
             "message": record.getMessage(),
         }
-
-       # Standard fields to skip for extras
+        
+        # Add username if present
+        if hasattr(record, "username"):
+            log_record["username"] = record.username
+        
+        # Add exception info if present
+        if record.exc_info:
+            log_record["exception"] = self.formatException(record.exc_info)
+        
+        # Add stack trace if present
+        if record.stack_info:
+            log_record["stack"] = record.stack_info
+        
+        # Add any extra fields (except standard logging fields)
         standard_fields = {
             'name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
             'filename', 'module', 'lineno', 'funcName', 'created',
             'msecs', 'relativeCreated', 'thread', 'threadName',
             'processName', 'process', 'exc_info', 'exc_text', 'stack_info',
-            'username', 'taskName', 'action', 'method'
-        }     
+            'username'  # Already handled above
+        }
         
-         # Add extra fields from record.__dict__
         for key, value in record.__dict__.items():
             if key not in standard_fields:
-                log_record[key] = value       
-
+                log_record[key] = value
+        
         # Serialize to JSON
         if self.use_orjson:
             return orjson.dumps(log_record, default=str).decode('utf-8')
         else:
             return json.dumps(log_record, default=str)
-        
-        
     
     def formatException(self, exc_info) -> str:
         """Format exception info as string"""

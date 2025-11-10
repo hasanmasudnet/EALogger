@@ -44,29 +44,21 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
         @functools.wraps(inner_func)
         def wrapper(*args, **kwargs):
             logger.debug(
-                f"Entering {inner_func.__name__} with args={args} kwargs={kwargs}",
-                "ENTRY",
-                "CALL",
-                "system",
-                extra={}
-            ) 
+                "Entering %s with args=%r kwargs=%r",
+                inner_func.__name__,
+                args,
+                kwargs
+            )
             try:
                 result = inner_func(*args, **kwargs)
-                logger.debug(
-                    f"Exiting {inner_func.__name__}",
-                    "EXIT",
-                    "CALL",
-                    "system",
-                  extra={}
-                )
+                logger.debug("Exiting %s", inner_func.__name__)
                 return result
             except Exception as e:
                 logger.error(
-                    f"Exception in {inner_func.__name__}: {e}",
-                    "EXCEPTION",
-                    "CALL",
-                    "system",
-                   extra={}
+                    "Exception in %s: %r",
+                    inner_func.__name__,
+                    e,
+                    exc_info=True
                 )
                 raise
         
@@ -85,41 +77,32 @@ def log_entry_exit_async(func: Callable = None, *, app_name: str = None, use_jso
             await some_async_op()
             return x + y
     """
-
+    
     def decorator(inner_func: Callable) -> Callable:
         logger = get_logger(
             inner_func.__module__,
             app_name=app_name or get_default_app_name(),
             use_json=use_json,
         )
-                
+        
         @functools.wraps(inner_func)
         async def async_wrapper(*args, **kwargs):
-          
             logger.debug(
-                f"Entering {inner_func.__name__} with args={args} kwargs={kwargs}",
-                "ENTRY",
-                "CALL",
-                "system",
-                extra={}
-            )            
+                "Entering %s with args=%r kwargs=%r",
+                inner_func.__name__,
+                args,
+                kwargs
+            )
             try:
                 result = await inner_func(*args, **kwargs)
-                logger.debug(
-                    f"Exiting {inner_func.__name__}",
-                    "EXIT",
-                    "CALL",
-                    "system",
-                  extra={}
-                )
+                logger.debug("Exiting %s", inner_func.__name__)
                 return result
             except Exception as e:
                 logger.error(
-                    f"Exception in {inner_func.__name__}: {e}",
-                    "EXCEPTION",
-                    "CALL",
-                    "system",
-                   extra={}
+                    "Exception in %s: %r",
+                    inner_func.__name__,
+                    e,
+                    exc_info=True
                 )
                 raise
         

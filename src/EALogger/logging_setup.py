@@ -1,5 +1,6 @@
 """
 Enhanced logging setup with rotation, console output, and context support
++ CustomLogger for extended method signatures
 """
 
 import logging
@@ -18,6 +19,7 @@ __all__ = [
     "set_default_log_dir",
     "get_default_log_dir",
     "ContextLoggerAdapter",
+    "CustomLogger",
 ]
 
 # --- Globals ---
@@ -30,54 +32,115 @@ _LOG_BACKUP_COUNT = 5
 _LOG_CONSOLE_ENABLED = os.getenv("LOG_CONSOLE", "true").lower() == "true"
 
 
-def set_default_app_name(app_name: str):
-    """Set a global default app name for all decorators and loggers."""
-    global _default_app_name
-    _default_app_name = app_name
+# ----------------------------------------------------------------------
+# Custom Logger (extends base logger)
+# ----------------------------------------------------------------------
+class CustomLogger(logging.Logger):
+    """
+    Custom logger that supports calls like:
+        logger.info("Message", "action", "method", extra={...})
+    """
+
+    def _inject_action_method(self, action, method, username, kwargs):
+        """Merge 'action' and 'method' into extra fields."""
+        extra = kwargs.get("extra", {})
+        if action:
+            extra["action"] = action
+        if method:
+            extra["method"] = method
+        if username:
+            extra["username"] = username
+        kwargs["extra"] = extra
+        return kwargs
+
+    def info(self, msg, action=None, method=None,username=None, *args, **kwargs):
+        kwargs = self._inject_action_method(action, method,username, kwargs)
+        super().info(msg, *args, **kwargs)
+
+    def debug(self, msg, action=None, method=None, username=None, *args, **kwargs):       
+        kwargs = self._inject_action_method(action, method,username, kwargs)       
+        super().debug(msg, *args, **kwargs)
+
+    def warning(self, msg, action=None, method=None,username=None, *args, **kwargs):
+        kwargs = self._inject_action_method(action, method,username, kwargs)
+        super().warning(msg, *args, **kwargs)
+
+    def error(self, msg, action=None, method=None, username=None, *args, **kwargs):
+        kwargs = self._inject_action_method(action, method,username, kwargs)
+        super().error(msg, *args, **kwargs)
+
+    def critical(self, msg, action=None, method=None, username=None, *args, **kwargs):
+        kwargs = self._inject_action_method(action, method,username, kwargs)
+        super().critical(msg, *args, **kwargs)
 
 
-def get_default_app_name() -> str:
-    """Get the current global default app name."""
-    return _default_app_name
+# ensure all future loggers are instances of CustomLogger
+logging.setLoggerClass(CustomLogger)
 
 
-def set_default_log_dir(path: str):
-    """Set a global default log directory base (overrides env var)."""
-    global _default_log_dir
-    _default_log_dir = path
-
-
-def get_default_log_dir() -> str:
-    """Get the current global default log directory base."""
-    return _default_log_dir
-
-
+# ----------------------------------------------------------------------
+# Context Logger Adapter
+# ----------------------------------------------------------------------
 class ContextLoggerAdapter(logging.LoggerAdapter):
     """
     Enhanced logger adapter that injects context fields into log records.
     Supports username and any other context fields.
     """
-    
+
     def __init__(self, logger: logging.Logger, context: Dict[str, Any] = None):
-        """
-        Initialize adapter with logger and context dict.
-        
-        Args:
-            logger: Base logger instance
-            context: Dict of context fields to inject (e.g., {"username": "john", "user_id": 123})
-        """
         super().__init__(logger, context or {})
-    
+
     def process(self, msg: str, kwargs: Dict[str, Any]) -> tuple:
-        """
-        Process log message and inject context fields.
-        Merges context with any extra fields passed in kwargs.
-        """
         extra = kwargs.get("extra", {})
         kwargs["extra"] = {**self.extra, **extra}
         return msg, kwargs
 
 
+
+    # --- override common logging methods to forward action/method ---
+    def info(self, msg, action=None, method=None, username=None, *args, **kwargs):
+        # print("HI SANJK inof")
+        # print(kwargs)
+        return self.logger.info(msg, action, method,username, *args, **kwargs)
+
+    def debug(self, msg, action=None, method=None,username=None,  *args, **kwargs):
+       
+        return self.logger.debug(msg, action, method,username, *args, **kwargs)
+
+    def warning(self, msg, action=None, method=None,username=None,  *args, **kwargs):
+        return self.logger.warning(msg, action, method,username, *args, **kwargs)
+
+    def error(self, msg, action=None, method=None,username=None,  *args, **kwargs):
+        return self.logger.error(msg, action, method,username, *args, **kwargs)
+
+    def critical(self, msg, action=None, method=None,username=None,  *args, **kwargs):
+        return self.logger.critical(msg, action, method, username,*args, **kwargs)
+
+
+# ----------------------------------------------------------------------
+# Default app/log directory management
+# ----------------------------------------------------------------------
+def set_default_app_name(app_name: str):
+    global _default_app_name
+    _default_app_name = app_name
+
+
+def get_default_app_name() -> str:
+    return _default_app_name
+
+
+def set_default_log_dir(path: str):
+    global _default_log_dir
+    _default_log_dir = path
+
+
+def get_default_log_dir() -> str:
+    return _default_log_dir
+
+
+# ----------------------------------------------------------------------
+# Main logger factory
+# ----------------------------------------------------------------------
 def get_logger(
     name: str,
     app_name: Optional[str] = None,
@@ -91,108 +154,92 @@ def get_logger(
 ) -> logging.LoggerAdapter:
     """
     Return a logger with consistent, production-ready configuration.
-    
+
     Features:
     - Logs stored under <base_dir>/<app_name>/<YYYY-MM>/<app_name>-<YYYY-MM-DD>.log
-    - Base dir can be overridden via LOG_BASE_DIR env var or set_default_log_dir()
-    - All timestamps in UTC
     - JSON by default for EFK/log aggregation
     - Optional log rotation (10MB, 5 backups)
     - Optional colored console output
     - Context injection support
-    
-    Args:
-        name: Logger name (typically __name__)
-        app_name: Application name (defaults to global default)
-        use_json: Use JSON formatting (default: True)
-        username: Username to inject (deprecated, use context instead)
-        context: Dict of context fields to inject
-        enable_console: Enable colored console output (default: from LOG_CONSOLE env var)
-        enable_rotation: Enable log rotation (default: True)
-        rotation_size: Max file size before rotation (default: 10MB)
-        backup_count: Number of backup files to keep (default: 5)
-    
-    Returns:
-        LoggerAdapter configured with context and handlers
+    - CustomLogger supports shorthand signatures like:
+        logger.info("msg", "action", "method", extra={})
     """
-    # Fallback to global default if not passed explicitly
+
+    # --- Ensure we rebuild this logger as a CustomLogger ---
+    if name in logging.Logger.manager.loggerDict:
+        del logging.Logger.manager.loggerDict[name]
+
+    logger = logging.getLogger(name)
+
+    # --- App name fallback ---
     if app_name is None:
         app_name = get_default_app_name()
-    
-    # Merge username into context for backward compatibility
+
+    # --- Merge username into context (legacy support) ---
     if username is not None:
         if context is None:
             context = {}
-        context["username"] = username
-    
-    # Ensure directory path is UTC-based by month
+        context["username"] = username + "SA"
+
+    # --- Prepare log directory ---
     utc_today = datetime.now(timezone.utc).date()
     log_dir = os.path.join(get_default_log_dir(), app_name, utc_today.strftime("%Y-%m"))
     os.makedirs(log_dir, exist_ok=True)
-    
-    # Daily log file (UTC)
+
     log_filename = f"{app_name}-{utc_today.strftime('%Y-%m-%d')}.log"
     log_path = os.path.join(log_dir, log_filename)
-    
-    logger = logging.getLogger(name)
-    
-    # Only add handlers if none exist for this file path
+
+    # --- File handler ---
     has_file_handler = any(
-        isinstance(h, (logging.FileHandler, logging.handlers.RotatingFileHandler)) 
+        isinstance(h, (logging.FileHandler, logging.handlers.RotatingFileHandler))
         and getattr(h, "baseFilename", None) == os.path.abspath(log_path)
         for h in logger.handlers
     )
-    
+
     if not has_file_handler:
-        # File handler with optional rotation
         if enable_rotation:
             handler = logging.handlers.RotatingFileHandler(
                 log_path,
                 maxBytes=rotation_size,
                 backupCount=backup_count,
                 mode="a",
-                encoding="utf-8"
+                encoding="utf-8",
             )
         else:
             handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
-        
-        # Set formatter
+
         if use_json:
             handler.setFormatter(JSONFormatter())
         else:
             formatter = logging.Formatter(
-                "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+                "%(asctime)s - %(levelname)s - %(name)s - %(message)s - "
+                "action=%(action)s - method=%(method)s - details=%(details)s"
             )
-            formatter.converter = time.gmtime  # Force UTC in plain text
+            formatter.converter = time.gmtime  # force UTC
             handler.setFormatter(formatter)
-        
+
         handler.setLevel(logging.DEBUG)
         logger.addHandler(handler)
-    
-    # Console handler (optional, colored output)
+
+    # --- Console handler ---
     if enable_console is None:
         enable_console = _LOG_CONSOLE_ENABLED
-    
+
     if enable_console:
-        has_console_handler = any(
-            isinstance(h, logging.StreamHandler)
-            for h in logger.handlers
-        )
+        has_console_handler = any(isinstance(h, logging.StreamHandler) for h in logger.handlers)
         if not has_console_handler:
             console_handler = logging.StreamHandler()
-            console_handler.setFormatter(ColoredConsoleFormatter(
-                "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
-            ))
-            console_handler.setLevel(logging.INFO)  # Console shows INFO and above
+            console_handler.setFormatter(
+                ColoredConsoleFormatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+            )
+            console_handler.setLevel(logging.INFO)
             logger.addHandler(console_handler)
-    
-    # Set logger level
+
+    # --- Set level and wrap in adapter ---
     logger.setLevel(logging.DEBUG)
-    
-    # Return wrapped logger with context
-    default_context = {"username": "-"}  # Backward compatibility
+
+    default_context = {"username": "-"}
     if context:
         default_context.update(context)
-    
-    return ContextLoggerAdapter(logger, default_context)
 
+    return ContextLoggerAdapter(logger, default_context)
