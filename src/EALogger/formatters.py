@@ -32,7 +32,7 @@ class JSONFormatter(logging.Formatter):
        # Base log record
         log_record: Dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            # "level": record.levelname,
+            "level": record.levelname,
             # "module": record.module,
             "action": getattr(record, "action", None),
             "method": getattr(record, "method", None),
