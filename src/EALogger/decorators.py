@@ -44,7 +44,7 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
         @functools.wraps(inner_func)
         def wrapper(*args, **kwargs):
             logger.debug(
-                f"Entering {inner_func.__name__} with args={args} kwargs={kwargs}",
+                f"Entering {inner_func.__name__}",
                 "ENTRY",
                 "CALL",
                 "system",
@@ -97,7 +97,7 @@ def log_entry_exit_async(func: Callable = None, *, app_name: str = None, use_jso
         async def async_wrapper(*args, **kwargs):
           
             logger.debug(
-                f"Entering {inner_func.__name__} with args={args} kwargs={kwargs}",
+                f"Entering {inner_func.__name__}",
                 "ENTRY",
                 "CALL",
                 "system",
