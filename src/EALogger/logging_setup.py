@@ -41,7 +41,7 @@ class CustomLogger(logging.Logger):
         logger.info("Message", "action", "method", extra={...})
     """
 
-    def _inject_action_method(self, action, method, username, kwargs):
+    def _inject_action_method(self, action, method, username, module_name, kwargs):
         """Merge 'action' and 'method' into extra fields."""
         extra = kwargs.get("extra", {})
         if action:
@@ -50,27 +50,29 @@ class CustomLogger(logging.Logger):
             extra["method"] = method
         if username:
             extra["username"] = username
+        if module_name:
+            extra["module_name"] = module_name
         kwargs["extra"] = extra
         return kwargs
 
-    def info(self, msg, action=None, method=None,username=None, *args, **kwargs):
-        kwargs = self._inject_action_method(action, method,username, kwargs)
+    def info(self, msg, action=None, method=None,username=None, module_name=None, *args, **kwargs):
+        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)
         super().info(msg, *args, **kwargs)
 
-    def debug(self, msg, action=None, method=None, username=None, *args, **kwargs):       
-        kwargs = self._inject_action_method(action, method,username, kwargs)       
+    def debug(self, msg, action=None, method=None, username=None, module_name=None, *args, **kwargs):       
+        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)       
         super().debug(msg, *args, **kwargs)
 
-    def warning(self, msg, action=None, method=None,username=None, *args, **kwargs):
-        kwargs = self._inject_action_method(action, method,username, kwargs)
+    def warning(self, msg, action=None, method=None,username=None, module_name=None, *args, **kwargs):
+        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)
         super().warning(msg, *args, **kwargs)
 
-    def error(self, msg, action=None, method=None, username=None, *args, **kwargs):
-        kwargs = self._inject_action_method(action, method,username, kwargs)
+    def error(self, msg, action=None, method=None, username=None, module_name=None, *args, **kwargs):
+        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)
         super().error(msg, *args, **kwargs)
 
-    def critical(self, msg, action=None, method=None, username=None, *args, **kwargs):
-        kwargs = self._inject_action_method(action, method,username, kwargs)
+    def critical(self, msg, action=None, method=None, username=None, module_name=None, *args, **kwargs):
+        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)
         super().critical(msg, *args, **kwargs)
 
 
@@ -98,23 +100,23 @@ class ContextLoggerAdapter(logging.LoggerAdapter):
 
 
     # --- override common logging methods to forward action/method ---
-    def info(self, msg, action=None, method=None, username=None, *args, **kwargs):
+    def info(self, msg, action=None, method=None, username=None, module=None, *args, **kwargs):
         # print("HI SANJK inof")
         # print(kwargs)
-        return self.logger.info(msg, action, method,username, *args, **kwargs)
+        return self.logger.info(msg, action, method,username, module, *args, **kwargs)
 
-    def debug(self, msg, action=None, method=None,username=None,  *args, **kwargs):
+    def debug(self, msg, action=None, method=None,username=None, module=None,  *args, **kwargs):
        
-        return self.logger.debug(msg, action, method,username, *args, **kwargs)
+        return self.logger.debug(msg, action, method,username, module, *args, **kwargs)
 
-    def warning(self, msg, action=None, method=None,username=None,  *args, **kwargs):
-        return self.logger.warning(msg, action, method,username, *args, **kwargs)
+    def warning(self, msg, action=None, method=None,username=None, module=None,  *args, **kwargs):
+        return self.logger.warning(msg, action, method,username, module, *args, **kwargs)
 
-    def error(self, msg, action=None, method=None,username=None,  *args, **kwargs):
-        return self.logger.error(msg, action, method,username, *args, **kwargs)
+    def error(self, msg, action=None, method=None,username=None, module=None,  *args, **kwargs):
+        return self.logger.error(msg, action, method,username, module, *args, **kwargs)
 
-    def critical(self, msg, action=None, method=None,username=None,  *args, **kwargs):
-        return self.logger.critical(msg, action, method, username,*args, **kwargs)
+    def critical(self, msg, action=None, method=None,username=None, module=None,  *args, **kwargs):
+        return self.logger.critical(msg, action, method, username, module, *args, **kwargs)
 
 
 # ----------------------------------------------------------------------

@@ -45,9 +45,10 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
         def wrapper(*args, **kwargs):
             logger.debug(
                 f"Entering {inner_func.__name__}",
-                "ENTRY",
+                "ENTRY",               
                 "CALL",
                 "system",
+                "module",
                 extra={}
             ) 
             try:
@@ -57,6 +58,7 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
                     "EXIT",
                     "CALL",
                     "system",
+                    "module",
                   extra={}
                 )
                 return result
@@ -66,6 +68,7 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
                     "EXCEPTION",
                     "CALL",
                     "system",
+                    "module",
                    extra={}
                 )
                 raise
@@ -101,6 +104,7 @@ def log_entry_exit_async(func: Callable = None, *, app_name: str = None, use_jso
                 "ENTRY",
                 "CALL",
                 "system",
+                "module",
                 extra={}
             )            
             try:
@@ -110,6 +114,7 @@ def log_entry_exit_async(func: Callable = None, *, app_name: str = None, use_jso
                     "EXIT",
                     "CALL",
                     "system",
+                    "module",
                   extra={}
                 )
                 return result
@@ -119,6 +124,7 @@ def log_entry_exit_async(func: Callable = None, *, app_name: str = None, use_jso
                     "EXCEPTION",
                     "CALL",
                     "system",
+                    "module",
                    extra={}
                 )
                 raise

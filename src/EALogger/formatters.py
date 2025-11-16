@@ -33,7 +33,8 @@ class JSONFormatter(logging.Formatter):
         log_record: Dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "level": record.levelname,
-            # "module": record.module,
+            # "module": getattr(record, "module", None),
+            "module": getattr(record, "module_name", None),
             "action": getattr(record, "action", None),
             "method": getattr(record, "method", None),
             "username": getattr(record, "username", None),
