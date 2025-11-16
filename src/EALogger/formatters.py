@@ -47,7 +47,7 @@ class JSONFormatter(logging.Formatter):
             'filename', 'module', 'lineno', 'funcName', 'created',
             'msecs', 'relativeCreated', 'thread', 'threadName',
             'processName', 'process', 'exc_info', 'exc_text', 'stack_info',
-            'username', 'taskName', 'action', 'method'
+            'username', 'taskName', 'action', 'method','module_name'
         }     
         
          # Add extra fields from record.__dict__
