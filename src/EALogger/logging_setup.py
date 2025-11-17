@@ -12,6 +12,12 @@ from typing import Optional, Dict, Any
 
 from .formatters import JSONFormatter, ColoredConsoleFormatter
 
+# from EALogger.context import current_app_name
+
+import inspect
+
+from EALogger.context import current_app_name
+
 __all__ = [
     "get_logger",
     "set_default_app_name",
@@ -31,6 +37,7 @@ _LOG_ROTATION_SIZE = 10 * 1024 * 1024  # 10MB
 _LOG_BACKUP_COUNT = 5
 _LOG_CONSOLE_ENABLED = os.getenv("LOG_CONSOLE", "true").lower() == "true"
 
+ 
 
 # ----------------------------------------------------------------------
 # Custom Logger (extends base logger)
@@ -44,6 +51,14 @@ class CustomLogger(logging.Logger):
     def _inject_action_method(self, action, method, username, module_name, kwargs):
         """Merge 'action' and 'method' into extra fields."""
         extra = kwargs.get("extra", {})
+
+         # If decorator did NOT explicitly pass module_name → read from ContextVar
+        if module_name is None:
+            try:
+                module_name = current_app_name.get()
+            except LookupError:
+                module_name = None
+
         if action:
             extra["action"] = action
         if method:
@@ -103,7 +118,6 @@ class ContextLoggerAdapter(logging.LoggerAdapter):
 
     # --- override common logging methods to forward action/method ---
     def info(self, msg, action=None, method=None, username=None, module=None, *args, **kwargs):
-        
         return self.logger.info(msg, action, method,username, module, *args, **kwargs)
 
     def debug(self, msg, action=None, method=None,username=None, module=None,  *args, **kwargs):       

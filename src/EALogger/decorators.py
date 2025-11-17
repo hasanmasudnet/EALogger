@@ -6,10 +6,11 @@ from typing import Callable
 from fastapi import Request
 from .logging_setup import get_logger, get_default_app_name
 import time
-
+ 
 
 __all__ = ["log_entry_exit", "log_entry_exit_async", "log_performance", "log_performance_async"]
 
+from EALogger.context import current_app_name
 
 async def get_request_body(request: Request):
     """
@@ -113,10 +114,15 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
 
         @functools.wraps(inner_func)
         async def async_wrapper(*args, **kwargs):
+            token = current_app_name.set(app_name) 
+
             context = await _extract_context(args, kwargs, inner_func)
             start_time = time.perf_counter()
 
             extra_info = {k: v for k, v in context.items() if k not in ["request", "cls", "function_name", "file", "line", "url"]}
+
+            extra_info['module_name'] =app_name
+
 
             logger.debug(
                 f"Entering {context['function_name']}",
@@ -160,13 +166,17 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
                     extra=extra_info
                 )
                 raise
+            finally:
+                current_app_name.reset(token)
 
         @functools.wraps(inner_func)
         def sync_wrapper(*args, **kwargs):
+            token = current_app_name.set(app_name) 
             # In sync context, we cannot read request body asynchronously, so body will be None
             context = asyncio.run(_extract_context(args, kwargs, inner_func))
             start_time = time.perf_counter()
             extra_info = {k: v for k, v in context.items() if k not in ["request", "cls", "function_name", "file", "line", "url"]}
+            extra_info['module_name'] =app_name
 
             logger.debug(
                 f"Entering {context['function_name']}",
@@ -210,6 +220,8 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
                     extra=extra_info
                 )
                 raise
+            finally:
+                current_app_name.reset(token)  
 
         return async_wrapper if asyncio.iscoroutinefunction(inner_func) else sync_wrapper
 
