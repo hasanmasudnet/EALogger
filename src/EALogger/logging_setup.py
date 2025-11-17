@@ -57,10 +57,12 @@ class CustomLogger(logging.Logger):
 
     def info(self, msg, action=None, method=None,username=None, module_name=None, *args, **kwargs):
         kwargs = self._inject_action_method(action, method,username, module_name, kwargs)
+        print('IN-',kwargs)
         super().info(msg, *args, **kwargs)
 
-    def debug(self, msg, action=None, method=None, username=None, module_name=None, *args, **kwargs):       
-        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)       
+    def debug(self, msg, action=None, method=None, username=None, module_name=None, *args, **kwargs):           
+        kwargs = self._inject_action_method(action, method,username, module_name, kwargs) 
+        print('debug-',kwargs)
         super().debug(msg, *args, **kwargs)
 
     def warning(self, msg, action=None, method=None,username=None, module_name=None, *args, **kwargs):
@@ -101,12 +103,11 @@ class ContextLoggerAdapter(logging.LoggerAdapter):
 
     # --- override common logging methods to forward action/method ---
     def info(self, msg, action=None, method=None, username=None, module=None, *args, **kwargs):
-        # print("HI SANJK inof")
-        # print(kwargs)
+        
         return self.logger.info(msg, action, method,username, module, *args, **kwargs)
 
-    def debug(self, msg, action=None, method=None,username=None, module=None,  *args, **kwargs):
-       
+    def debug(self, msg, action=None, method=None,username=None, module=None,  *args, **kwargs):       
+        
         return self.logger.debug(msg, action, method,username, module, *args, **kwargs)
 
     def warning(self, msg, action=None, method=None,username=None, module=None,  *args, **kwargs):

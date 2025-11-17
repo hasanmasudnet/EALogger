@@ -49,6 +49,11 @@ class JSONFormatter(logging.Formatter):
             'processName', 'process', 'exc_info', 'exc_text', 'stack_info',
             'username', 'taskName', 'action', 'method','module_name'
         }     
+
+        # Only remove these 3 keys if they are None
+        for key in ["action", "method", "username"]:
+            if log_record.get(key) is None:
+                log_record.pop(key)
         
          # Add extra fields from record.__dict__
         for key, value in record.__dict__.items():
