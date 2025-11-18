@@ -71,13 +71,11 @@ class CustomLogger(logging.Logger):
         return kwargs
 
     def info(self, msg, action=None, method=None,username=None, module_name=None, *args, **kwargs):
-        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)
-        print('IN-',kwargs)
+        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)       
         super().info(msg, *args, **kwargs)
 
     def debug(self, msg, action=None, method=None, username=None, module_name=None, *args, **kwargs):           
-        kwargs = self._inject_action_method(action, method,username, module_name, kwargs) 
-        print('debug-',kwargs)
+        kwargs = self._inject_action_method(action, method,username, module_name, kwargs)     
         super().debug(msg, *args, **kwargs)
 
     def warning(self, msg, action=None, method=None,username=None, module_name=None, *args, **kwargs):

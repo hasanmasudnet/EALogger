@@ -12,6 +12,35 @@ __all__ = ["log_entry_exit", "log_entry_exit_async", "log_performance", "log_per
 
 from EALogger.context import current_app_name
 
+PASSWORD_KEYS = {"password", "pass", "pwd", "new_password", "confirm_password", 'old_password', 'old_pass', 'old_pwd'}
+
+
+SKIP_KEYS = ["request", "cls", "url","path",'file']
+
+def mask_passwords_in_dict(data: dict):
+    """Mask password fields in a dict recursively."""
+    for key, value in data.items():
+        if isinstance(value, dict):
+            mask_passwords_in_dict(value)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    mask_passwords_in_dict(item)
+        else:
+            if key.lower() in PASSWORD_KEYS:
+                data[key] = "******"
+    return data
+
+
+def mask_passwords_in_string(body: str) -> str:
+    """Mask password-like patterns inside a raw string."""
+    # Build a case-insensitive regex from PASSWORD_KEYS
+    keys_pattern = "|".join(re.escape(k) for k in PASSWORD_KEYS)
+    # Examples handled:
+    # password=..., "password": "...", 'password': '...', password":"..."
+    pattern = rf'(?i)({keys_pattern})\s*[:=]\s*(".*?"|\'.*?\'|\S+)'
+    return re.sub(pattern, lambda m: f"{m.group(1)}=******", body)
+
 async def get_request_body(request: Request):
     """
     Safely get the request body without consuming it for downstream handlers.
@@ -25,14 +54,21 @@ async def get_request_body(request: Request):
         return {"type": "http.request", "body": body_bytes}
     request._receive = receive  # override internal _receive
 
-    # Try to parse JSON, fallback to string
+    # Try JSON
     try:
-        return json.loads(body_bytes.decode("utf-8"))  # dict if JSON
+        parsed = json.loads(body_bytes.decode("utf-8"))
+        if isinstance(parsed, dict):
+            return mask_passwords_in_dict(parsed)
+        return parsed
     except Exception:
-        try:
-            return body_bytes.decode("utf-8")  # raw string
-        except Exception:
-            return None
+        pass
+
+    # Treat as raw string
+    try:
+        text = body_bytes.decode("utf-8")
+        return mask_passwords_in_string(text)
+    except Exception:
+        return None
 
 
 async def log_request_info(request: Request = None) -> dict:
@@ -87,12 +123,12 @@ async def _extract_context(args, kwargs, inner_func) -> dict:
         "method": req_info.get("method"),
         "url": req_info.get("url"),
         "path": req_info.get("path"),
+        "function_name": function_name,
         "query_params": req_info.get("query_params"),
         "headers": req_info.get("headers"),
         "client_host": req_info.get("client_host"),
         "body": req_info.get("body"),
-        "cls": cls,
-        "function_name": function_name,
+        "cls": cls,        
         "file": file,
         "line": line,
         "username": username,
@@ -119,7 +155,7 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
             context = await _extract_context(args, kwargs, inner_func)
             start_time = time.perf_counter()
 
-            extra_info = {k: v for k, v in context.items() if k not in ["request", "cls", "function_name", "file", "line", "url"]}
+            extra_info = {k: v for k, v in context.items() if k not in SKIP_KEYS}
 
             extra_info['module_name'] =app_name
 
@@ -175,7 +211,7 @@ def log_entry_exit(func: Callable = None, *, app_name: str = None, use_json: boo
             # In sync context, we cannot read request body asynchronously, so body will be None
             context = asyncio.run(_extract_context(args, kwargs, inner_func))
             start_time = time.perf_counter()
-            extra_info = {k: v for k, v in context.items() if k not in ["request", "cls", "function_name", "file", "line", "url"]}
+            extra_info = {k: v for k, v in context.items() if k not in SKIP_KEYS}
             extra_info['module_name'] =app_name
 
             logger.debug(
